@@ -1,0 +1,13 @@
+﻿Private Sub CommandButton1_Click()
+'StartTime = Timer
+FRIDAY_DATE
+'      EndTIme = Timer
+'   MsgBox Format(EndTIme - StartTime, "0.0")
+End Sub
+
+Private Sub returnQButton_Click()
+'StartTime = Timer
+  Clear_REPORT_dates
+'        EndTIme = Timer
+'   MsgBox Format(EndTIme - StartTime, "0.0")
+End Sub

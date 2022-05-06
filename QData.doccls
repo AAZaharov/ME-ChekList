@@ -1,0 +1,61 @@
+﻿Dim qDataArray() As Variant
+
+Sub initQDataArray()
+    
+    Dim lastRow As Integer
+    lastRow = QData.Cells(Rows.Count, 1).End(xlUp).Row
+    
+    Dim lastCol As Integer
+    lastCol = QData.Cells(1, Columns.Count).End(xlToLeft).Column
+    
+    Dim qDataRange As Range
+    Set qDataRange = Range(QData.Cells(1, 1), QData.Cells(lastRow, lastCol))
+    
+    qDataArray = qDataRange.Value
+    
+End Sub
+
+Function getRowNum(qCode As String)
+    
+On Error GoTo ErrorHandler
+    ub = UBound(qDataArray, 1)
+    GoTo noError
+ErrorHandler:
+    Call initQDataArray
+    
+noError:
+On Error GoTo 0
+    
+    For i = LBound(qDataArray, 1) To UBound(qDataArray, 1)
+    
+        If CStr(qDataArray(i, 1)) = qCode Then
+            getRowNum = qDataArray(i, 3)
+            Exit For
+        End If
+        
+    Next i
+    
+End Function
+
+Function getDbColumn(qCode As String)
+    
+On Error GoTo ErrorHandler
+    ub = UBound(qDataArray, 1)
+ErrorHandler:
+    Call initQDataArray
+On Error GoTo 0
+    
+    For i = LBound(qDataArray, 1) To UBound(qDataArray, 1)
+    
+        If CStr(qDataArray(i, 1)) = qCode Then
+            getDbColumn = qDataArray(i, 4)
+            Exit For
+        End If
+        
+    Next i
+    
+End Function
+
+Private Sub Worksheet_SelectionChange(ByVal Target As Range)
+
+End Sub

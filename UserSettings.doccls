@@ -1,0 +1,80 @@
+﻿Sub saveUserSettings(userName As String)
+    
+    ' get row number of user
+    Dim userRow As Integer
+    
+    ' find row number for user
+    userRow = UserSettings.getUserRow(userName)
+    
+    ' save state of saving without description checkbox
+    UserSettings.Cells(userRow, "B").Value = Sheet_IP_Check.saveWithoutDescrCheckBox.Value
+    
+    ' save state of send mail with error description checkbox
+    UserSettings.Cells(userRow, "C").Value = Sheet_IP_Check.sendErrDescrCheckBox.Value
+    
+    ' save state of send mail about finished work checkbox
+    UserSettings.Cells(userRow, "D").Value = Sheet_IP_Check.sendFinishedStateCheckBox.Value
+    
+End Sub
+
+Sub getUserSettings(userName As String)
+    
+    ' get row number of user
+    Dim userRow As Integer
+    
+    ' find row number for user
+    userRow = UserSettings.getUserRow(userName)
+    
+    ' if no user found, show message and exit function
+    If userRow = 0 Then
+    
+        MsgBox ("Âàøè íàñòðîéêè îïöèé åù¸ íå ñîõðàíåíû â áàçå")
+        Exit Sub
+        
+    End If
+    
+    ' save state of saving without description checkbox
+    Sheet_IP_Check.saveWithoutDescrCheckBox.Value = UserSettings.Cells(userRow, "B").Value
+    
+    ' save state of send mail with error description checkbox
+    Sheet_IP_Check.sendErrDescrCheckBox.Value = UserSettings.Cells(userRow, "C").Value
+    
+    ' save state of send mail about finished work checkbox
+    Sheet_IP_Check.sendFinishedStateCheckBox.Value = UserSettings.Cells(userRow, "D").Value
+    
+End Sub
+
+Function getUserRow(userName As String) As Integer
+    
+    ' set function result to 0
+    getUserRow = 0
+    
+    ' last filled row in "user" column on UserSettings sheet
+    Dim lastRow As Integer
+    lastRow = UserSettings.Cells(Rows.Count, "A").End(xlUp).Row
+    
+    ' find user and return row number, if exist
+    For i = 2 To lastRow
+        
+        If UserSettings.Cells(i, "A").Value = userName Then
+            
+            getUserRow = i
+            Exit Function
+            
+        End If
+        
+    Next i
+    
+End Function
+
+Sub addUserWithSettings(newUser As String)
+    
+    ' last filled row in "user" column on UserSettings sheet
+    Dim lastRow As Integer
+    lastRow = UserSettings.Cells(Rows.Count, "A").End(xlUp).Row
+    
+    UserSettings.Cells(lastRow + 1, "A").Value = newUser
+    
+    Call saveUserSettings(newUser)
+    
+End Sub

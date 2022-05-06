@@ -1,0 +1,502 @@
+﻿'array for error flags and descriptions
+Dim ipQErrArray(1 To 53, 1 To 3) As Variant
+    
+
+Private Sub clearIpFieldsButton_Click()
+    
+    ' î÷èùàåì âñå äàííûå íà ëèñòå IP_Check
+    Call clearIpFields
+    
+End Sub
+
+Private Sub Label2_Click()
+
+End Sub
+
+Private Sub loadButton_KeyPress(ByVal KeyAscii As MSForms.ReturnInteger)
+
+End Sub
+
+Private Sub mesaStatusComboBox_Change()
+    ' âûáèðàåì íà ëèñòå PDM_Check òàêîå æå çíà÷åíèå
+    Sheet_PDM_Check.mesaStatusComboBox.Value = mesaStatusComboBox.Value
+End Sub
+
+Private Sub newButton_Click()
+        
+    ' óñòàíàâëèâàåì ñåãîäíÿøíþþ äàòó
+    Sheet_IP_Check.Cells(1, "F").Value = Date
+        
+    ' î÷èùàåì âñå äàííûå íà ëèñòå IP_Check
+    Call clearIpFields
+    
+    ' î÷èùàåì âñå äàííûå íà ëèñòå PDM_Check
+    Call Sheet_PDM_Check.clearPdmFields
+    
+End Sub
+
+Private Sub performerComboBox_Change()
+    ' âûáèðàåì íà ëèñòå PDM_Check òàêîå æå çíà÷åíèå
+    Sheet_PDM_Check.performerComboBox.Value = performerComboBox.Value
+End Sub
+
+Private Sub reworkComboBox_Change()
+    ' âûáèðàåì íà ëèñòå PDM_Check òàêîå æå çíà÷åíèå
+    Sheet_PDM_Check.reworkComboBox.Value = reworkComboBox.Value
+End Sub
+
+' îáðàáîò÷èê íàæàòèÿ êíîïêè Save
+' ïðîèçâîäèò ïðîâåðêó ââåä¸ííûõ äàííûõ,
+' ñîõðàíÿåò ðåçóëüòàò â áàçó
+' è îòïðàâëÿåò àâòîìàòè÷åñêîå ïèñüìî èñïîëíèòåëþ
+Private Sub saveButton_Click()
+    
+    Call validateAndSave
+    
+End Sub
+
+Private Sub loadButton_Click()
+
+    'Return report from DataTable(sheet Database) to the sheet CheckList
+    Application.EnableEvents = False
+    
+    SearchForm.Show
+    
+    Application.EnableEvents = True
+
+End Sub
+
+Private Sub checkAndReworkButton_Click()
+
+'find exist report in the table1( sheet Database)
+'îòêëþ÷àåì âñå îáðàáîò÷èêè ñîáûòèé
+Application.EnableEvents = False
+'-----------------------------------------
+Call Similar_Report
+ 'âêëþ÷àåì âñå îáðàáîò÷èêè ñîáûòèé
+ Application.EnableEvents = True
+'---------------------------------------------
+  
+End Sub
+
+Private Sub CommandButton4_Click()
+    
+    Application.EnableEvents = False
+    
+    SearchForm.Show
+    
+    Application.EnableEvents = True
+     
+End Sub
+
+' îáðàáîòêà íàæàòèÿ êíîïêè "Íîâûé îò÷¸ò/Çàìåíèòü îò÷¸ò"
+Private Sub saveRecordToggleButton_Click()
+    
+    ' ïðîâåðÿåì äàòó
+    If saveRecordToggleButton.Value And CDate(Sheet_IP_Check.Cells(1, "F")) < Date Then
+        MsgBox ("Ðàçðåøàåòñÿ ðåäàêòèðîâàòü òîëüêî çàïèñè ñ òåêóùåé äàòîé")
+        saveRecordToggleButton.Value = False
+        Exit Sub
+    End If
+    
+    With saveRecordToggleButton
+        ' åñëè êíîïêà íàæàòà, îò÷¸ò â áàçå áóäåò çàìåí¸í
+        If .Value Then
+            .Caption = "Çàìåíèòü îò÷¸ò"
+            With Sheet_IP_Check.Cells(5, "K")
+                .Value = "Çàïèñü â áàçå äàííûõ áóäåò çàìåíåíà"
+                .HorizontalAlignment = xlCenter
+                .VerticalAlignment = xlCenter
+                .Interior.Color = RGB(255, 124, 128)
+            End With
+        ' åñëè êíîïêà îòæàòà, â áàçó áóäåò äîáàâëåí íîâûé îò÷¸ò
+        Else
+            .Caption = "Íîâûé îò÷¸ò"
+            With Sheet_IP_Check.Cells(5, "K")
+                .Value = "Â áàçó äàííûõ áóäåò äîáàâëåíà íîâàÿ çàïèñü"
+                .HorizontalAlignment = xlCenter
+                .VerticalAlignment = xlCenter
+                .Interior.Color = RGB(169, 208, 142)
+            End With
+        End If
+    End With
+End Sub
+
+Private Sub saveWithoutDescrCheckBox_Click()
+
+End Sub
+
+Private Sub sendErrDescrCheckBox_Click()
+
+End Sub
+
+Private Sub Worksheet_Activate()
+
+    ' fill ComboBoxes on IP_Check sheet
+    Call GetDataModule.initIpComboBoxes
+    
+End Sub
+
+Private Sub Worksheet_BeforeDoubleClick(ByVal Target As Range, Cancel As Boolean)
+    
+    ' åñëè äåëàåòñÿ äâîéíîé êëèê ïî ÿ÷åéêå âî âòîðîì èëè òðåòüåì ñòîëáöå
+    If Target.Column = 2 Or Target.Column = 3 Then
+        ' è íîìåð ñòðîêè ñîîòâåòñòâóåò ñòðîêå ñ âîïðîñîì
+        If isIpQuestionRow(Target.Row) Then
+            
+            ' ñòàâèì â ÿ÷åéêó åäèíèöó
+            Cells(Target.Row, 3) = 1
+            
+            ' îòìåíÿåì ñòàíäàðòíóþ îáðàáîòêó äâîéíîãî êëèêà
+            Cancel = True
+            
+        End If
+        
+    End If
+    
+End Sub
+
+Private Sub Worksheet_BeforeRightClick(ByVal Target As Range, Cancel As Boolean)
+    
+    ' åñëè äåëàåòñÿ êëèê ÏÊÌ ïî ÿ÷åéêå âî âòîðîì èëè òðåòüåì ñòîëáöå
+    If Target.Column = 2 Or Target.Column = 3 Then
+        ' è íîìåð ñòðîêè ñîîòâåòñòâóåò ñòðîêå ñ âîïðîñîì
+        If isIpQuestionRow(Target.Row) Then
+        
+            ' óäàëÿåì çíà÷åíèå èç ÿ÷åéêè
+            Cells(Target.Row, 3) = ""
+            
+            ' îòìåíÿåì ñòàíäàðòíóþ îáðàáîòêó êëèêà ÏÊÌ
+            Cancel = True
+            
+        End If
+        
+    End If
+    
+End Sub
+
+Private Sub Worksheet_Change(ByVal Target As Range)
+    'number of column with error codes (column "J")
+    Const errCodeCol As Integer = 10
+
+    'row shift of error description zone
+    Const shiftDescrRow As Integer = 7
+    
+    ' ïåðâàÿ è ïîñëåäíÿÿ ñòðîêè ñ îïèñàíèåì îøèáîê â ñåêöèè IP
+    Dim firstIpDescrRow As Integer, lastIpDescrRow As Integer
+    
+    ' êîëè÷åñòâî ñòðîê â òàáëèöå
+    Dim descrTableRows As Integer
+    
+    'åñëè èçìåíåíî ñðàçó íåñêîëüêî ÿ÷ååê, íå äåëàåì íè÷åãî
+    If Target.Cells.Count > 1 Then Exit Sub
+    
+    If ipQErrArray(1, 1) <> -1 Then initIpQErrArray
+    
+    Dim tRow As Integer
+    tRow = Target.Row
+    
+    Dim tCol As Integer
+    tCol = Target.Column
+    
+    Dim tValue As String
+    tValue = Target.Value
+    
+    'if modified cell is in column 3 ("C") between rows 3 and 39
+    If isIpQuestionCell(Target) Then
+    
+       'Ensure target is a number
+        If IsNumeric(Target) Then
+
+            'Stop any possible runtime errors and halting code
+            On Error Resume Next
+
+            'Turn off ALL events so does not _
+            'put the code into a loop.
+            Application.EnableEvents = False
+            
+            'put information about changed element in ipQErrArray
+            ipQErrArray(tRow, 1) = Cells(tRow, 1).Value
+            ipQErrArray(tRow, 2) = tValue
+            'if flag deleted, remove description from ipQErrArray
+            If tValue = "" Then ipQErrArray(tRow, 3) = ""
+            
+            ' óäàëÿåì äàííûå îá îøèáêàõ ñ ëèñòà
+            Call clearIpErrDescr
+            
+            ' çàïèñûâàåì íîâûå äàííûå îá îøèáêàõ
+            Call fillIpErrDescr
+            
+            ' âêëþ÷àåì îáðàáîòêó ñîáûòèé
+            Application.EnableEvents = True
+
+            ' âêëþ÷àåì îáðàáîòêó îøèáîê
+            On Error GoTo 0
+
+'            ' ïðè íåîáõîäèìîñòè èçìåíÿåì ðàçìåð äèíàìè÷åñêîé òàáëèöû IpDescrTable
+'            If Not (Sheet_IP_Check.ListObjects("IpDescrTable").DataBodyRange Is Nothing) Then
+'                If tValue = "" _
+'                    And Sheet_IP_Check.ListObjects("IpDescrTable").DataBodyRange.Rows.Count > 1 _
+'                Then
+'                    Call reduceIpDescrTable
+'                End If
+'            End If
+'
+            'resize table
+            'count rows in qStateArray with error flag
+            Dim filledRows As Integer
+            filledRows = 0
+            For i = 3 To UBound(ipQErrArray, 1)
+                If ipQErrArray(i, 2) <> "" Then filledRows = filledRows + 1
+            Next i
+            'if no errors, set table size to 2 row
+            If filledRows = 0 Then filledRows = 1
+
+            descrTableRange = Sheet_IP_Check.ListObjects("IpDescrTable").Range.Address
+            newRange = Range(descrTableRange).Resize(filledRows + 1).Address
+            Sheet_IP_Check.ListObjects("IpDescrTable").Resize Range(newRange)
+            
+            If Not (Sheet_PDM_Check.ListObjects("PdmDescrTable").DataBodyRange Is Nothing) Then
+            
+                fr = Sheet_IP_Check.ListObjects("IpDescrTable").DataBodyRange.Row
+                rCount = Sheet_IP_Check.ListObjects("IpDescrTable").DataBodyRange.Rows.Count
+                fc = Sheet_IP_Check.ListObjects("IpDescrTable").DataBodyRange.Column
+                
+                ' âûðàâíèâàåì êîäû âîïðîñîâ ïî öåíòðó
+                With Range(Cells(fr, fc), Cells(fr + rCount - 1, fc))
+                    .HorizontalAlignment = xlCenter
+                    .VerticalAlignment = xlTop
+                End With
+                
+                ' âûðàâíèâàåì îïèñàíèå âîïðîñîâ ïî ëåâîìó êðàþ
+                With Range(Cells(fr, fc + 1), Cells(fr + rCount - 1, fc + 1))
+                    .HorizontalAlignment = xlLeft
+                    .VerticalAlignment = xlTop
+                End With
+                
+            End If
+            
+        End If
+        
+    End If
+    
+    ' åñëè èçìåíåíà ÿ÷åéêà ñ îïèñàíèåì, êîïèðóåì îïèñàíèå â ìàññèâ ipQErrArray
+    If isIpDescrCell(Target) Then
+        
+        ipQErrArray(QData.getRowNum(Sheet_IP_Check.Cells(tRow, tCol - 1)), 3) = tValue
+        
+    End If
+    
+    ' îáðàáîòêà çàïîëíåíèÿ àòðèáóòîâ Date, RelRecNr, IP Number è Module
+    ' åñëè îíè ìåíÿþòñÿ, ìåíÿåì èõ òàêæå íà ëèñòå PDM_Checklist
+    ' -----------------------------------------------------------------
+    ' ïîëå Date
+    If Target.Address = "$F$1" Then
+        Application.EnableEvents = False
+        Sheet_PDM_Check.Cells(1, "G").Value = Target.Value
+        Application.EnableEvents = True
+    End If
+    ' ïîëå RelRecNr
+    If Target.Address = "$F$2" Then
+        Application.EnableEvents = False
+        Sheet_PDM_Check.Cells(2, "G").Value = Target.Value
+        Application.EnableEvents = True
+    End If
+    ' ïîëå IP Number
+    If Target.Address = "$F$4" Then
+        Application.EnableEvents = False
+        Sheet_PDM_Check.Cells(4, "G").Value = Target.Value
+        Application.EnableEvents = True
+    End If
+    ' ïîëå Module
+    If Target.Address = "$F$5" Then
+        Application.EnableEvents = False
+        Sheet_PDM_Check.Cells(5, "G").Value = Target.Value
+        Application.EnableEvents = True
+    End If
+    
+End Sub
+
+' ïðîâåðêà, ÿâëÿåòñÿ ëè èçìåí¸ííàÿ ÿ÷åéêà ÿ÷åéêîé îòìåòêè âîïðîñà
+Function isIpQuestionCell(t As Range) As Boolean
+
+    If t.Column = 3 Then
+        If isIpQuestionRow(t.Row) Then
+            isIpQuestionCell = True
+        Else
+            isIpQuestionCell = False
+        End If
+    End If
+    
+End Function
+
+' ïðîâåðêà, íàõîäèòñÿ ëè èçìåí¸ííàÿ ÿ÷åéêà â ñîîòâåòñòâóþùåé ñòðîêå
+Function isIpQuestionRow(r As Integer) As Boolean
+
+    If (r >= 3 And r <= 53) _
+    Then
+        isIpQuestionRow = True
+    Else
+        isIpQuestionRow = False
+    End If
+    
+End Function
+
+Sub clearIpErrDescr()
+    
+    Dim errRows As Range
+    Set errRows = Sheet_IP_Check.ListObjects("IpDescrTable").DataBodyRange
+    
+    If errRows Is Nothing Then Exit Sub
+    
+    If IsEmpty(errRows(1, 1)) Then Exit Sub
+    
+    For Each tCell In errRows
+        tCell.clear
+    Next tCell
+    
+End Sub
+
+Sub fillIpErrDescr()
+    
+    Dim fTableRow As Integer
+    fTableRow = 7
+    
+    Dim k As Integer
+    k = fTableRow
+    
+    For i = 2 To UBound(ipQErrArray)
+        
+        If ipQErrArray(i, 2) = 1 Then
+            
+             Sheet_IP_Check.Cells(k, "J").Value = ipQErrArray(i, 1)
+             Sheet_IP_Check.Cells(k, "K").Value = ipQErrArray(i, 3)
+             k = k + 1
+            
+        End If
+        
+    Next i
+    
+End Sub
+
+Sub reduceIpDescrTable()
+    
+    Dim newRange As Range
+    Dim firstRow, rowCount As Integer
+    
+    firstRow = Sheet_IP_Check.ListObjects("IpDescrTable").DataBodyRange.Row
+    rowCount = Sheet_IP_Check.ListObjects("IpDescrTable").DataBodyRange.Rows.Count
+    
+    Set newRange = Range(Cells(firstRow - 1, "J"), Cells(firstRow + rowCount - 2, "K"))
+    
+    Sheet_IP_Check.ListObjects("IpDescrTable").Resize newRange
+    
+End Sub
+
+Function isIpDescrCell(t As Range) As Boolean
+    
+    If t.Column <> 11 Then
+        isIpDescrCell = False
+        Exit Function
+    End If
+    
+    If Sheet_IP_Check.ListObjects("IpDescrTable").DataBodyRange Is Nothing Then
+        isIpDescrCell = False
+        Exit Function
+    End If
+    
+    Dim newRange As Range
+    Dim firstRow, rowCount, descrCol As Integer
+    
+    firstRow = Sheet_IP_Check.ListObjects("IpDescrTable").DataBodyRange.Row
+    rowCount = Sheet_IP_Check.ListObjects("IpDescrTable").DataBodyRange.Rows.Count
+    descrCol = Sheet_IP_Check.ListObjects("IpDescrTable").DataBodyRange.Column + 1
+    
+    If t.Column = descrCol _
+    And t.Row >= firstRow _
+    And t.Row <= firstRow + rowCount _
+    Then
+        isIpDescrCell = True
+    Else
+        isIpDescrCell = False
+    End If
+    
+End Function
+
+Sub initIpQErrArray()
+    For i = LBound(ipQErrArray, 2) To UBound(ipQErrArray, 2)
+        ipQErrArray(1, i) = -1
+    Next i
+    
+    Dim errSum As Integer
+    errSum = 0
+    
+    For i = 2 To UBound(ipQErrArray, 1)
+        
+        If Sheet_IP_Check.Cells(i, 3) = 1 Then
+            ipQErrArray(i, 1) = Sheet_IP_Check.Cells(i, 1)
+            ipQErrArray(i, 2) = 1
+            
+            errSum = errSum + 1
+        End If
+            
+    Next i
+    
+    If errSum > 0 Then
+        
+        Dim newRange As Range
+        Dim firstRow As Integer
+        Dim rowCount As Integer
+        Dim descrCol As Integer
+        
+        If Sheet_IP_Check.ListObjects("IpDescrTable").DataBodyRange Is Nothing Then
+            firstRow = 7
+            rowCount = 1
+            descrCol = 1
+        Else
+            firstRow = Sheet_IP_Check.ListObjects("IpDescrTable").DataBodyRange.Row
+            rowCount = Sheet_IP_Check.ListObjects("IpDescrTable").DataBodyRange.Rows.Count
+            descrCol = Sheet_IP_Check.ListObjects("IpDescrTable").DataBodyRange.Column + 1
+        
+            For i = firstRow To firstRow + rowCount - 1
+                If Sheet_IP_Check.Cells(i, descrCol - 1).Value <> "" Then
+                    ipQErrArray(QData.getRowNum(Sheet_IP_Check.Cells(i, descrCol - 1).Value), 3) _
+                        = Sheet_IP_Check.Cells(i, descrCol).Value
+                End If
+            Next i
+            
+        End If
+        
+    End If
+    
+End Sub
+
+Sub clearIpFields()
+    
+    ' î÷èùàåì ÿ÷åéêè ñ îòìåòêàìè îøèáîê
+    Dim errRange As Range
+    Set errRange = Range(Sheet_IP_Check.Cells(3, "C"), Sheet_IP_Check.Cells(53, "C"))
+    
+    For Each C In errRange
+    
+        If C.Value = 1 Then
+        
+            C.Value = ""
+            
+        End If
+        
+    Next C
+    
+    ' î÷èùàåì ïîëÿ ñ àòðèáóòàìè (êðîìå äàòû)
+    Application.EnableEvents = False
+    
+    Sheet_IP_Check.Cells(2, "F").Value = ""
+    Sheet_IP_Check.performerComboBox.Value = ""
+    Sheet_IP_Check.Cells(4, "F").Value = ""
+    Sheet_IP_Check.Cells(5, "F").Value = ""
+    Sheet_IP_Check.reworkComboBox.Value = "0"
+    Sheet_IP_Check.mesaStatusComboBox.Value = ""
+    
+    Application.EnableEvents = True
+    
+End Sub

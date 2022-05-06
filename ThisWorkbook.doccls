@@ -1,0 +1,52 @@
+﻿Private Sub Workbook_BeforeClose(Cancel As Boolean)
+    
+    ' save user settings to UserSettings sheet
+    If UserSettings.getUserRow(Application.userName) = 0 Then
+        
+        Call UserSettings.addUserWithSettings(Application.userName)
+        
+    Else
+    
+        Call UserSettings.saveUserSettings(Application.userName)
+    
+    End If
+    
+End Sub
+
+Private Sub Workbook_Open()
+    ActiveWorkbook.Sheets("Checklist").Activate
+    Cells(1, "F").Value = Format(Now, "mm/dd/yyyy")
+    Cells(6, "f").Value = 0
+    
+    Call InitFileName
+    Call initLoadedCheckRowNumber
+    Call initLoadedDescrRowNumbers
+    
+    With Sheet_IP_Check.Cells(5, "K")
+        .Value = "Â áàçó äàííûõ áóäåò äîáàâëåíà íîâàÿ çàïèñü"
+        .HorizontalAlignment = xlCenter
+        .VerticalAlignment = xlCenter
+        .Interior.Color = RGB(169, 208, 142)
+    End With
+    
+    Sheet_IP_Check.saveRecordToggleButton.Value = False
+    
+    ' fill comboboxes on IP_Check sheet
+    Call GetDataModule.initIpComboBoxes
+    
+    ' fill comboboxes on PDM_Check sheet
+    Call GetDataModule.initPdmComboBoxes
+    
+    ' set user settings
+    Call UserSettings.getUserSettings(Application.userName)
+    
+    ' create new check
+    ' óñòàíàâëèâàåì ñåãîäíÿøíþþ äàòó
+    Sheet_IP_Check.Cells(1, "F").Value = Date
+    ' î÷èùàåì âñå äàííûå íà ëèñòå IP_Check
+    Call Sheet_IP_Check.clearIpFields
+    ' î÷èùàåì âñå äàííûå íà ëèñòå PDM_Check
+    Call Sheet_PDM_Check.clearPdmFields
+    
+End Sub
+

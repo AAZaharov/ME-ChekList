@@ -1,0 +1,420 @@
+﻿'row shift of error description zone
+Const shiftDescrRow As Integer = 5
+
+'array for error flags and descriptions
+Dim pdmQErrArray(1 To 19, 1 To 3) As Variant
+
+Private Sub clearPdmFieldsButton_Click()
+    
+    ' î÷èùàåì âñå äàííûå íà ëèñòå PDM_Check
+    Call clearPdmFields
+    
+End Sub
+
+Private Sub loadButton_Click()
+    
+    'Return report from DataTable(sheet Database) to the sheet CheckList
+    Application.EnableEvents = False
+    
+    SearchForm.Show
+    
+    Application.EnableEvents = True
+    
+End Sub
+
+Private Sub mesaStatusComboBox_Change()
+    ' âûáèðàåì íà ëèñòå IP_Check òàêîå æå çíà÷åíèå
+    Sheet_IP_Check.mesaStatusComboBox.Value = mesaStatusComboBox.Value
+End Sub
+
+Private Sub newButton_Click()
+    
+    ' óñòàíàâëèâàåì ñåãîäíÿøíþþ äàòó
+    Sheet_PDM_Check.Cells(1, "G").Value = Date
+        
+    ' î÷èùàåì âñå äàííûå íà ëèñòå IP_Check
+    Call Sheet_IP_Check.clearIpFields
+    
+    ' î÷èùàåì âñå äàííûå íà ëèñòå PDM_Check
+    Call clearPdmFields
+    
+End Sub
+
+Private Sub performerComboBox_Change()
+    ' âûáèðàåì íà ëèñòå IP_Check òàêîå æå çíà÷åíèå
+    Sheet_IP_Check.performerComboBox.Value = performerComboBox.Value
+End Sub
+
+Private Sub reworkComboBox_Change()
+    ' âûáèðàåì íà ëèñòå IP_Check òàêîå æå çíà÷åíèå
+    Sheet_IP_Check.reworkComboBox.Value = reworkComboBox.Value
+End Sub
+
+Private Sub saveButton_Click()
+    
+    ' âûçûâàåì ïðîöåäóðó çàïèñè
+    Call validateAndSave
+    
+End Sub
+
+Private Sub Worksheet_Activate()
+    
+    ' fill ComboBoxes on PDM_Check sheet
+    Call GetDataModule.initPdmComboBoxes
+    
+End Sub
+
+Private Sub Worksheet_BeforeDoubleClick(ByVal Target As Range, Cancel As Boolean)
+    
+    ' åñëè äåëàåòñÿ äâîéíîé êëèê ïî ÿ÷åéêå âî âòîðîì èëè òðåòüåì ñòîëáöå
+    If Target.Column = 3 Or Target.Column = 4 Then
+        ' è íîìåð ñòðîêè ñîîòâåòñòâóåò ñòðîêå ñ âîïðîñîì
+        If isPdmQuestionRow(Target.Row) Then
+            
+            ' ñòàâèì â ÿ÷åéêó åäèíèöó
+            Cells(Target.Row, 4) = 1
+            
+            ' îòìåíÿåì ñòàíäàðòíóþ îáðàáîòêó äâîéíîãî êëèêà
+            Cancel = True
+            
+        End If
+        
+    End If
+    
+End Sub
+
+Private Sub Worksheet_BeforeRightClick(ByVal Target As Range, Cancel As Boolean)
+
+    ' åñëè äåëàåòñÿ êëèê ÏÊÌ ïî ÿ÷åéêå òðåòüåì èëè ÷åòâ¸ðòîì ñòîëáöå
+    If Target.Column = 3 Or Target.Column = 4 Then
+        ' è íîìåð ñòðîêè ñîîòâåòñòâóåò ñòðîêå ñ âîïðîñîì
+        If isPdmQuestionRow(Target.Row) Then
+            
+            ' î÷èùàåì ÿ÷åéêó
+            Cells(Target.Row, 4) = ""
+            
+            ' îòìåíÿåì ñòàíäàðòíóþ îáðàáîòêó äâîéíîãî êëèêà
+            Cancel = True
+            
+        End If
+        
+    End If
+
+End Sub
+
+Private Sub Worksheet_Change(ByVal Target As Range)
+    'number of column with error codes (column "N")
+    Const errCodeCol As Integer = 10
+    
+    'åñëè èçìåíåíî ñðàçó íåñêîëüêî ÿ÷ååê, íå äåëàåì íè÷åãî
+    If Target.Cells.Count > 1 Then Exit Sub
+    
+    If pdmQErrArray(1, 1) <> -1 Then initPdmQErrArray
+    
+    Dim tRow As Integer
+    tRow = Target.Row
+    
+    Dim tCol As Integer
+    tCol = Target.Column
+    
+    Dim tValue As String
+    tValue = Target.Value
+    
+    ' åñëè èçìåíåíà ÿ÷åéêà, îáîçíà÷àþùàÿ îøèáêó PDM
+    If isPdmQuestionCell(Target) Then
+    
+       'Ensure target is a number
+        If IsNumeric(Target) Then
+
+            'Stop any possible runtime errors and halting code
+            On Error Resume Next
+
+                'Turn off ALL events so does not _
+                'put the code into a loop.
+                Application.EnableEvents = False
+                
+                'put information about changed element in pdmQErrArray
+                pdmQErrArray(tRow, 1) = Cells(tRow, 2).Value
+                pdmQErrArray(tRow, 2) = tValue
+                'if flag deleted, remove description from pdmQErrArray
+                If tValue = "" Then pdmQErrArray(tRow, 3) = ""
+                
+                ' óäàëÿåì äàííûå îá îøèáêàõ ñ ëèñòà
+                Call clearPdmErrDescr
+                
+                ' çàïèñûâàåì íîâûå äàííûå îá îøèáêàõ
+                Call fillPdmErrDescr
+                
+                'Turn events back on
+                Application.EnableEvents = True
+
+            'Allow run time errors again
+            On Error GoTo 0
+
+'            ' ïðè íåîáõîäèìîñòè èçìåíÿåì ðàçìåð äèíàìè÷åñêîé òàáëèöû IpDescrTable
+'            If Not (Sheet_PDM_Check.ListObjects("PdmDescrTable").DataBodyRange Is Nothing) Then
+'                If tValue = "" _
+'                    And Sheet_PDM_Check.ListObjects("PdmDescrTable").DataBodyRange.Rows.Count > 1 _
+'                Then
+'                    Call reducePdmDescrTable
+'                End If
+'            End If
+
+            'resize table
+            'count rows in qStateArray with error flag
+            Dim filledRows As Integer
+            filledRows = 0
+            For i = 3 To UBound(pdmQErrArray, 1)
+                If pdmQErrArray(i, 2) <> "" Then filledRows = filledRows + 1
+            Next i
+            'if no errors, set table size to 2 row
+            If filledRows = 0 Then filledRows = 1
+            
+            descrTableRange = Sheet_PDM_Check.ListObjects("PdmDescrTable").Range.Address
+            newRange = Range(descrTableRange).Resize(filledRows + 1).Address
+            Sheet_PDM_Check.ListObjects("PdmDescrTable").Resize Range(newRange)
+            
+            If Not (Sheet_PDM_Check.ListObjects("PdmDescrTable").DataBodyRange Is Nothing) Then
+            
+                fr = Sheet_PDM_Check.ListObjects("PdmDescrTable").DataBodyRange.Row
+                rCount = Sheet_PDM_Check.ListObjects("PdmDescrTable").DataBodyRange.Rows.Count
+                fc = Sheet_PDM_Check.ListObjects("PdmDescrTable").DataBodyRange.Column
+                
+                ' âûðàâíèâàåì êîäû âîïðîñîâ ïî öåíòðó
+                With Range(Cells(fr, fc), Cells(fr + rCount - 1, fc))
+                    .HorizontalAlignment = xlCenter
+                    .VerticalAlignment = xlTop
+                End With
+                
+                ' âûðàâíèâàåì îïèñàíèå âîïðîñîâ ïî ëåâîìó êðàþ
+                With Range(Cells(fr, fc + 1), Cells(fr + rCount - 1, fc + 1))
+                    .HorizontalAlignment = xlLeft
+                    .VerticalAlignment = xlTop
+                End With
+                
+            End If
+            
+        End If
+        
+    End If
+    
+    ' åñëè èçìåíåíà ÿ÷åéêà ñ îïèñàíèåì, êîïèðóåì îïèñàíèå â ìàññèâ ipQErrArray
+    If isPdmDescrCell(Target) Then
+        
+        pdmQErrArray(QData.getRowNum(Sheet_PDM_Check.Cells(tRow, tCol - 1)), 3) = tValue
+        
+    End If
+    
+    ' îáðàáîòêà çàïîëíåíèÿ àòðèáóòîâ Date, RelRecNr, IP Number è Module
+    ' åñëè îíè ìåíÿþòñÿ, ìåíÿåì èõ òàêæå íà ëèñòå Checklist
+    ' -----------------------------------------------------------------
+    ' ïîëå Date
+    If Target.Address = "$G$1" Then
+        Application.EnableEvents = False
+        Sheet_IP_Check.Cells(1, "F").Value = Target.Value
+        Application.EnableEvents = True
+    End If
+    ' ïîëå RelRecNr
+    If Target.Address = "$G$2" Then
+        Application.EnableEvents = False
+        Sheet_IP_Check.Cells(2, "F").Value = Target.Value
+        Application.EnableEvents = True
+    End If
+    ' ïîëå IP Number
+    If Target.Address = "$G$4" Then
+        Application.EnableEvents = False
+        Sheet_IP_Check.Cells(4, "F").Value = Target.Value
+        Application.EnableEvents = True
+    End If
+    ' ïîëå Module
+    If Target.Address = "$G$5" Then
+        Application.EnableEvents = False
+        Sheet_IP_Check.Cells(5, "F").Value = Target.Value
+        Application.EnableEvents = True
+    End If
+
+    
+End Sub
+
+' ïðîâåðêà, ÿâëÿåòñÿ ëè èçìåí¸ííàÿ ÿ÷åéêà ÿ÷åéêîé îòìåòêè âîïðîñà
+Function isPdmQuestionCell(t As Range) As Boolean
+
+    If t.Column = 4 Then
+        If isPdmQuestionRow(t.Row) Then
+            isPdmQuestionCell = True
+        Else
+            isPdmQuestionCell = False
+        End If
+    End If
+    
+End Function
+
+' ïðîâåðêà, íàõîäèòñÿ ëè èçìåí¸ííàÿ ÿ÷åéêà â ñîîòâåòñòâóþùåé ñòðîêå
+Function isPdmQuestionRow(r As Integer) As Boolean
+
+    If r >= 2 And r <= 19 Then
+        isPdmQuestionRow = True
+    Else
+        isPdmQuestionRow = False
+    End If
+    
+End Function
+
+Sub clearPdmErrDescr()
+    
+    Dim errRows As Range
+    Set errRows = Sheet_PDM_Check.ListObjects("PdmDescrTable").DataBodyRange
+    
+    If errRows Is Nothing Then Exit Sub
+    
+    If IsEmpty(errRows(1, 1)) Then Exit Sub
+    
+    For Each tCell In errRows
+        tCell.clear
+    Next tCell
+    
+End Sub
+
+Sub fillPdmErrDescr()
+    
+    Dim fTableRow As Integer
+    fTableRow = 5
+    
+    Dim k As Integer
+    k = fTableRow
+    
+    For i = 2 To UBound(pdmQErrArray)
+        
+        If pdmQErrArray(i, 2) = 1 Then
+            
+             Sheet_PDM_Check.Cells(k, "J").Value = pdmQErrArray(i, 1)
+             Sheet_PDM_Check.Cells(k, "K").Value = pdmQErrArray(i, 3)
+             k = k + 1
+            
+        End If
+        
+    Next i
+    
+End Sub
+
+Sub reducePdmDescrTable()
+    
+    Dim newRange As Range
+    Dim firstRow, rowCount As Integer
+    
+    firstRow = Sheet_PDM_Check.ListObjects("PdmDescrTable").DataBodyRange.Row
+    rowCount = Sheet_PDM_Check.ListObjects("PdmDescrTable").DataBodyRange.Rows.Count
+    
+    Set newRange = Range(Cells(firstRow - 1, "J"), Cells(firstRow + rowCount - 2, "K"))
+    
+    Sheet_PDM_Check.ListObjects("PdmDescrTable").Resize newRange
+    
+End Sub
+
+Function isPdmDescrCell(t As Range) As Boolean
+    
+    If t.Column <> 11 Then
+        isPdmDescrCell = False
+        Exit Function
+    End If
+    
+    If Sheet_PDM_Check.ListObjects("PdmDescrTable").DataBodyRange Is Nothing Then
+        isPdmDescrCell = False
+        Exit Function
+    End If
+    
+    Dim newRange As Range
+    Dim firstRow, rowCount, descrCol As Integer
+    
+    firstRow = Sheet_PDM_Check.ListObjects("PdmDescrTable").DataBodyRange.Row
+    rowCount = Sheet_PDM_Check.ListObjects("PdmDescrTable").DataBodyRange.Rows.Count
+    descrCol = Sheet_PDM_Check.ListObjects("PdmDescrTable").DataBodyRange.Column + 1
+    
+    If t.Column = descrCol _
+    And t.Row >= firstRow _
+    And t.Row <= firstRow + rowCount _
+    Then
+        isPdmDescrCell = True
+    Else
+        isPdmDescrCell = False
+    End If
+    
+End Function
+
+Sub initPdmQErrArray()
+    For i = LBound(pdmQErrArray, 2) To UBound(pdmQErrArray, 2)
+        pdmQErrArray(1, i) = -1
+    Next i
+    
+    Dim errSum As Integer
+    errSum = 0
+    
+    For i = 2 To UBound(pdmQErrArray, 1)
+        
+        If Sheet_PDM_Check.Cells(i, 3) = 1 Then
+            pdmQErrArray(i, 1) = Sheet_PDM_Check.Cells(i, 1)
+            pdmQErrArray(i, 2) = 1
+            
+            errSum = errSum + 1
+        End If
+            
+    Next i
+    
+    If errSum > 0 Then
+        
+        Dim newRange As Range
+        Dim firstRow As Integer
+        Dim rowCount As Integer
+        Dim descrCol As Integer
+        
+        If Sheet_PDM_Check.ListObjects("PdmDescrTable").DataBodyRange Is Nothing Then
+            firstRow = 5
+            rowCount = 1
+            descrCol = 1
+        Else
+            firstRow = Sheet_PDM_Check.ListObjects("PdmDescrTable").DataBodyRange.Row
+            rowCount = Sheet_PDM_Check.ListObjects("PdmDescrTable").DataBodyRange.Rows.Count
+            descrCol = Sheet_PDM_Check.ListObjects("PdmDescrTable").DataBodyRange.Column + 1
+        
+            For i = firstRow To firstRow + rowCount - 1
+                If Sheet_PDM_Check.Cells(i, descrCol - 1).Value <> "" Then
+                    pdmQErrArray(QData.getRowNum(Sheet_PDM_Check.Cells(i, descrCol - 1).Value), 3) _
+                        = Sheet_PDM_Check.Cells(i, descrCol).Value
+                End If
+            Next i
+            
+        End If
+        
+    End If
+    
+End Sub
+
+Sub clearPdmFields()
+    
+    ' î÷èùàåì ÿ÷åéêè ñ îòìåòêàìè îøèáîê
+    Dim errRange As Range
+    Set errRange = Range(Sheet_PDM_Check.Cells(2, "D"), Sheet_PDM_Check.Cells(19, "D"))
+    
+    For Each C In errRange
+    
+        If C.Value = 1 Then
+        
+            C.Value = ""
+            
+        End If
+        
+    Next C
+    
+    ' î÷èùàåì ïîëÿ ñ àòðèáóòàìè (êðîìå äàòû)
+    Application.EnableEvents = False
+    
+    Sheet_PDM_Check.Cells(2, "G").Value = ""
+    Sheet_PDM_Check.performerComboBox.Value = ""
+    Sheet_PDM_Check.Cells(4, "G").Value = ""
+    Sheet_PDM_Check.Cells(5, "G").Value = ""
+    Sheet_PDM_Check.reworkComboBox.Value = "0"
+    Sheet_PDM_Check.mesaStatusComboBox.Value = ""
+    
+    Application.EnableEvents = True
+    
+End Sub
